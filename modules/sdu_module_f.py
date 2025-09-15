@@ -63,7 +63,7 @@ def descargar_archivo_desde_onedrive(url_onedrive):
         response = session.get(download_url, headers=headers, timeout=30, verify=False)
         
         if response.status_code == 200:
-            # Verificar que es an archivo Excel
+            # Verificar que es un archivo Excel
             if len(response.content) > 1000 and response.content[:4] == b'PK\x03\x04':
                 return BytesIO(response.content)
             else:
@@ -142,33 +142,6 @@ def encontrar_columna_clave(df, posibles_nombres):
     
     return None
 
-def tiene_telefono_o_correo(row, columnas_telefono, columnas_correo):
-    """Verifica si una fila tiene teléfono o correo"""
-    # Verificar teléfonos
-    for col in columnas_telefono:
-        if col in row and pd.notna(row[col]) and str(row[col]).strip() != '':
-            return True
-    
-    # Verificar correos
-    for col in columnas_correo:
-        if col in row and pd.notna(row[col]) and str(row[col]).strip() != '':
-            return True
-    
-    return False
-
-def es_director(puesto):
-    """Verifica si el puesto es director (excluyendo subdirector)"""
-    if pd.isna(puesto) or puesto == '':
-        return False
-    
-    puesto_str = str(puesto).lower().strip()
-    
-    # Buscar la palabra "director" pero excluir "subdirector"
-    if 'director' in puesto_str and 'subdirector' not in puesto_str:
-        return True
-    
-    return False
-
 def procesar_datos(df_ubicacion, df_relacion):
     """Procesa y combina los datos de ambos archivos"""
     try:
@@ -177,20 +150,10 @@ def procesar_datos(df_ubicacion, df_relacion):
         
         # Listas de posibles nombres para cada campo
         posibles_nombres_nombre = ['nombre', 'name', 'nombres', 'empleado', 'colaborador']
-        posibles_nombres_puesto = ['puesto', 'cargo', 'position', 'job_title']
-        posibles_nombres_departamento = ['departamento', 'area', 'department', 'depto']
-        posibles_nombres_telefono = ['telefono', 'tel', 'phone', 'celular', 'movil']
-        posibles_nombres_correo = ['correo', 'email', 'mail']
         
         # Encontrar columnas clave
         col_nombre_ubi = encontrar_columna_clave(df_ubicacion, posibles_nombres_nombre)
         col_nombre_rel = encontrar_columna_clave(df_relacion, posibles_nombres_nombre)
-        col_puesto_ubi = encontrar_columna_clave(df_ubicacion, posibles_nombres_puesto)
-        col_departamento_ubi = encontrar_columna_clave(df_ubicacion, posibles_nombres_departamento)
-        
-        # Encontrar columnas de teléfono y correo en el archivo de relación
-        columnas_telefono_rel = [col for col in df_relacion.columns if any(tel in str(col).lower() for tel in posibles_nombres_telefono)]
-        columnas_correo_rel = [col for col in df_relacion.columns if any(mail in str(col).lower() for mail in posibles_nombres_correo)]
         
         # Validar columnas
         if not col_nombre_ubi:
@@ -223,68 +186,15 @@ def procesar_datos(df_ubicacion, df_relacion):
         # Verificar existencia en ubicación
         nombres_ubicacion = set(df_ubicacion_clean[col_nombre_ubi].dropna().unique())
         
-        # Crear diccionarios para puestos y departamentos
-        puesto_dict = {}
-        departamento_dict = {}
-        
-        if col_puesto_ubi:
-            for _, row in df_ubicacion_clean.iterrows():
-                nombre = row[col_nombre_ubi]
-                puesto_dict[nombre] = row.get(col_puesto_ubi, '')
-        
-        if col_departamento_ubi:
-            for _, row in df_ubicacion_clean.iterrows():
-                nombre = row[col_nombre_ubi]
-                departamento_dict[nombre] = row.get(col_departamento_ubi, '')
-        
         # Agregar columna de verificación al dataframe de relación
         df_relacion_clean['en_ubicacion'] = df_relacion_clean[col_nombre_rel].isin(nombres_ubicacion)
         
-        # Agregar columnas de puesto y departamento
-        if col_puesto_ubi:
-            df_relacion_clean['puesto'] = df_relacion_clean[col_nombre_rel].map(puesto_dict).fillna('')
+        # Estadísticas
+        total = len(df_relacion_clean)
+        encontrados = sum(df_relacion_clean['en_ubicacion'])
+        no_encontrados = total - encontrados
         
-        if col_departamento_ubi:
-            df_relacion_clean['departamento'] = df_relacion_clean[col_nombre_rel].map(departamento_dict).fillna('')
-        
-        # Aplicar filtros: excluir directores y personas sin teléfono/correo
-        filtro_aplicado = False
-        total_antes_filtro = len(df_relacion_clean)
-        
-        # Filtrar por puesto (excluir directores)
-        if 'puesto' in df_relacion_clean.columns:
-            df_relacion_clean = df_relacion_clean[~df_relacion_clean['puesto'].apply(es_director)]
-            filtro_aplicado = True
-        
-        # Filtrar por teléfono/correo
-        df_relacion_clean = df_relacion_clean[df_relacion_clean.apply(
-            lambda row: tiene_telefono_o_correo(row, columnas_telefono_rel, columnas_correo_rel), 
-            axis=1
-        )]
-        
-        # Reordenar columnas para que puesto y departamento estén después del nombre
-        columnas = list(df_relacion_clean.columns)
-        
-        # Encontrar la posición de la columna de nombre
-        if col_nombre_rel in columnas:
-            nombre_idx = columnas.index(col_nombre_rel)
-            
-            # Mover puesto y departamento después del nombre si existen
-            nuevas_columnas = []
-            for i, col in enumerate(columnas):
-                nuevas_columnas.append(col)
-                if i == nombre_idx:
-                    if 'puesto' in columnas:
-                        nuevas_columnas.append('puesto')
-                    if 'departamento' in columnas:
-                        nuevas_columnas.append('departamento')
-            
-            # Eliminar duplicados y mantener el orden
-            from collections import OrderedDict
-            nuevas_columnas = list(OrderedDict.fromkeys(nuevas_columnas))
-            
-            # Reordenar el dataframe
-            df_relacion_clean = df_relacion_clean[nuevas_columnas]
+        st.success(f"✅ Procesamiento completado: {encontrados}/{total} registros encontrados en ubicación")
         
         return df_relacion_clean
         
@@ -296,7 +206,8 @@ def procesar_datos(df_ubicacion, df_relacion):
 
 def mostrar_sdu():
     """Muestra la interfaz del Sistema de Ubicación"""
-    # st.title("🔍 SDU - Sistema de Ubicación")
+    st.title("🔍 SDU - Sistema de Ubicación")
+    st.markdown("Sistema para verificar empleados en ubicación")
     
     # Inicializar estado de sesión
     if 'datos_cargados' not in st.session_state:
@@ -308,67 +219,224 @@ def mostrar_sdu():
     URL_UBICACION = "https://1drv.ms/x/c/88b10bb315761c17/EaMcP00dIK1Dn-ZSZfO9haABR71sEh8-_408ul6nYP7SNw?e=FG6bgm"
     URL_RELACION = "https://1drv.ms/x/c/88b10bb315761c17/EawEt81cpmtKrPEwLhCJkMsBOlOf9OL9eyRhWX5qiz3Q6g?e=KsJXQY"
     
-    # Botón de actualización simple en la parte superior
-    if st.button("🔄 Actualizar Datos", type="primary"):
-        with st.spinner("Descargando y procesando datos..."):
-            # Cargar los archivos con configuración fija
-            df_ubicacion = cargar_archivo(URL_UBICACION, 1)  # Fila 2 (índice 1)
-            df_relacion = cargar_archivo(URL_RELACION, 0)    # Fila 1 (índice 0)
+    # Carga de archivos
+    st.markdown("---")
+    st.subheader("📁 Cargar Archivos desde OneDrive")
+    
+    # Información importante
+    with st.expander("⚠️ Instrucciones importantes (Click para expandir)"):
+        st.markdown("""
+        **Para que funcione correctamente:**
+        1. **Abrir cada archivo** en OneDrive web
+        2. **Click en "Compartir"** 
+        3. **Seleccionar** "Cualquier persona con el vínculo"
+        4. **Configurar** como "Permitir edición"
+        5. **Usar el nuevo enlace** generado
+        
+        **Si falla la descarga automática:**
+        - Descarga manualmente los archivos
+        - Súbelos usando la opción de archivos locales
+        """)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### Archivo de Ubicación")
+        # st.info("Encabezados en fila 2")
+        
+        uso_url_ubicacion = st.checkbox("Usar URL predefinida para Ubicación", value=True, key="use_url_ubi")
+        
+        if uso_url_ubicacion:
+            st.success("✅ Usando URL predefinida de Ubicación")
+            st.code(URL_UBICACION, language="text")
+            uploaded_file_ubicacion = URL_UBICACION
+        else:
+            opcion_ubicacion = st.radio(
+                "Origen del archivo de Ubicación:",
+                ["URL de OneDrive", "Subir archivo local"],
+                key="opcion_ubi"
+            )
             
-            if df_ubicacion is not None and df_relacion is not None:
-                # Procesar los datos
-                df_combinado = procesar_datos(df_ubicacion, df_relacion)
-                
-                if df_combinado is not None:
-                    st.session_state.df_combinado = df_combinado
-                    st.session_state.datos_cargados = True
-                    st.success("✅ Datos actualizados correctamente")
+            if opcion_ubicacion == "URL de OneDrive":
+                uploaded_file_ubicacion = st.text_input(
+                    "URL de OneDrive para Ubicación",
+                    value="",
+                    placeholder="https://1drv.ms/...",
+                    key="url_ubicacion_input"
+                )
             else:
-                st.error("❌ No se pudieron cargar los archivos. Verifica las URLs.")
+                uploaded_file_ubicacion = st.file_uploader(
+                    "Subir archivo de Ubicación",
+                    type=['xlsx', 'xls'],
+                    key="upload_ubicacion"
+                )
+        
+    with col2:
+        st.markdown("### Archivo de Relación")
+        # st.info("Encabezados en fila 1")
+        
+        uso_url_relacion = st.checkbox("Usar URL predefinida para Relación", value=True, key="use_url_rel")
+        
+        if uso_url_relacion:
+            st.success("✅ Usando URL predefinida de Relación")
+            st.code(URL_RELACION, language="text")
+            uploaded_file_relacion = URL_RELACION
+        else:
+            opcion_relacion = st.radio(
+                "Origen del archivo de Relación:",
+                ["URL de OneDrive", "Subir archivo local"],
+                key="opcion_rel"
+            )
+            
+            if opcion_relacion == "URL de OneDrive":
+                uploaded_file_relacion = st.text_input(
+                    "URL de OneDrive para Relación",
+                    value="",
+                    placeholder="https://1drv.ms/...",
+                    key="url_relacion_input"
+                )
+            else:
+                uploaded_file_relacion = st.file_uploader(
+                    "Subir archivo de Relación",
+                    type=['xlsx', 'xls'],
+                    key="upload_relacion"
+                )
+    
+    # Botón para procesar datos
+    tiene_ubicacion = uploaded_file_ubicacion and (uso_url_ubicacion or uploaded_file_ubicacion.startswith('http') or hasattr(uploaded_file_ubicacion, 'name'))
+    tiene_relacion = uploaded_file_relacion and (uso_url_relacion or uploaded_file_relacion.startswith('http') or hasattr(uploaded_file_relacion, 'name'))
+    
+    if tiene_ubicacion and tiene_relacion:
+        if st.button("🔄 Procesar Datos", type="primary", use_container_width=True):
+            with st.spinner("Descargando y procesando datos..."):
+                # Cargar los archivos con configuración fija
+                df_ubicacion = cargar_archivo(uploaded_file_ubicacion, 1)  # Fila 2 (índice 1)
+                df_relacion = cargar_archivo(uploaded_file_relacion, 0)    # Fila 1 (índice 0)
+                
+                if df_ubicacion is not None and df_relacion is not None:
+                    # Procesar los datos
+                    df_combinado = procesar_datos(df_ubicacion, df_relacion)
+                    
+                    if df_combinado is not None:
+                        st.session_state.df_combinado = df_combinado
+                        st.session_state.datos_cargados = True
+                        st.success("✅ Datos procesados correctamente")
+                else:
+                    st.error("❌ No se pudieron cargar uno o ambos archivos. Verifica que:")
+                    st.error("1. Los archivos estén compartidos correctamente")
+                    st.error("2. Las URLs sean correctas")
+                    st.error("3. Los archivos sean válidos (formato .xlsx)")
     
     # Mostrar datos si están cargados
     if st.session_state.datos_cargados and st.session_state.df_combinado is not None:
-        df_combinado = st.session_state.df_combinado
+        st.markdown("---")
+        st.subheader("📊 Resultados del Procesamiento")
         
-        # Buscador
-        termino_busqueda = st.text_input(
-            "🔎 Buscar empleado por nombre",
-            placeholder="Ej: JUAN PEREZ",
-            key="busqueda_input"
-        )
+        # Mostrar estadísticas
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            total_registros = len(st.session_state.df_combinado)
+            st.metric("Total de registros", total_registros)
+        with col2:
+            encontrados = sum(st.session_state.df_combinado['en_ubicacion'])
+            st.metric("En ubicación", encontrados)
+        with col3:
+            no_encontrados = total_registros - encontrados
+            st.metric("No encontrados", no_encontrados)
+        
+        # Buscador integrado en la sección de resultados
+        st.markdown("---")
+        col_search1, col_search2 = st.columns([3, 1])
+        with col_search1:
+            termino_busqueda = st.text_input(
+                "🔎 Buscar empleado por nombre",
+                placeholder="Ej: JUAN PEREZ",
+                key="busqueda_input"
+            )
+        with col_search2:
+            st.write("")  # Espacio vertical
+            if st.button("Buscar", key="btn_buscar", use_container_width=True):
+                st.session_state.buscar_termino = termino_busqueda.upper().strip()
         
         # Mostrar resultados de búsqueda si existe término
-        if termino_busqueda:
-            termino = termino_busqueda.upper().strip()
-            df = df_combinado.copy()
+        if hasattr(st.session_state, 'buscar_termino') and st.session_state.buscar_termino:
+            termino = st.session_state.buscar_termino
+            df = st.session_state.df_combinado.copy()
             
             # Buscar en todas las columnas de texto
             resultados = df[df.astype(str).apply(lambda x: x.str.contains(termino, case=False).any(), axis=1)]
             
             if len(resultados) > 0:
                 st.success(f"✅ Encontrados {len(resultados)} empleados para: '{termino}'")
-                st.dataframe(resultados)
+                
+                # Mostrar resultados de búsqueda
+                tab_busqueda1, tab_busqueda2 = st.tabs(["✅ Encontrados en búsqueda", "📋 Detalles de búsqueda"])
+                
+                with tab_busqueda1:
+                    st.dataframe(resultados)
+                
+                with tab_busqueda2:
+                    st.write("**Distribución de resultados de búsqueda:**")
+                    encontrados_busqueda = sum(resultados['en_ubicacion'])
+                    no_encontrados_busqueda = len(resultados) - encontrados_busqueda
+                    
+                    col_b1, col_b2 = st.columns(2)
+                    with col_b1:
+                        st.metric("En ubicación", encontrados_busqueda)
+                    with col_b2:
+                        st.metric("No en ubicación", no_encontrados_busqueda)
+                    
+                    # Exportar resultados de búsqueda
+                    csv_data = resultados.to_csv(index=False, encoding='utf-8-sig')
+                    st.download_button(
+                        label="📥 Exportar Resultados de Búsqueda",
+                        data=csv_data,
+                        file_name=f"busqueda_{termino}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        key="export_busqueda"
+                    )
             else:
                 st.warning(f"❌ No se encontraron empleados con: '{termino}'")
         
         # Pestañas para mostrar todos los resultados
+        st.markdown("---")
         tab1, tab2 = st.tabs(["✅ Empleados en Ubicación", "❌ Empleados No Encontrados"])
         
         with tab1:
             st.subheader("Empleados que SÍ están en Ubicación")
-            df_encontrados = df_combinado[df_combinado['en_ubicacion'] == True]
+            df_encontrados = st.session_state.df_combinado[st.session_state.df_combinado['en_ubicacion'] == True]
             
             if len(df_encontrados) > 0:
                 st.dataframe(df_encontrados)
+                
+                # Exportar encontrados
+                csv_data = df_encontrados.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="📥 Exportar Encontrados (CSV)",
+                    data=csv_data,
+                    file_name=f"empleados_en_ubicacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key="export_encontrados"
+                )
             else:
                 st.info("No se encontraron empleados en la ubicación")
         
         with tab2:
             st.subheader("Empleados que NO están en Ubicación")
-            df_no_encontrados = df_combinado[df_combinado['en_ubicacion'] == False]
+            df_no_encontrados = st.session_state.df_combinado[st.session_state.df_combinado['en_ubicacion'] == False]
             
             if len(df_no_encontrados) > 0:
                 st.dataframe(df_no_encontrados)
+                
+                # Exportar no encontrados
+                csv_data = df_no_encontrados.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="📥 Exportar No Encontrados (CSV)",
+                    data=csv_data,
+                    file_name=f"empleados_no_encontrados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key="export_no_encontrados"
+                )
             else:
                 st.info("¡Todos los empleados están en la ubicación!")
         
@@ -376,7 +444,7 @@ def mostrar_sdu():
         st.markdown("---")
         st.subheader("📋 Exportar Datos Completos")
         
-        csv_data = df_combinado.to_csv(index=False, encoding='utf-8-sig')
+        csv_data = st.session_state.df_combinado.to_csv(index=False, encoding='utf-8-sig')
         st.download_button(
             label="📥 Exportar Todos los Datos (CSV)",
             data=csv_data,
@@ -386,8 +454,19 @@ def mostrar_sdu():
         )
         
     else:
-        st.info("ℹ️ Haga clic en 'Actualizar Datos' para cargar la información")
+        st.info("ℹ️ Configure los archivos y haga clic en 'Procesar Datos' para comenzar")
 
-# Ejecutar la aplicación
-if __name__ == "__main__":
-    mostrar_sdu()
+    # Información de ayuda
+    with st.expander("ℹ️ Información del sistema"):
+        st.markdown("""
+        **Funcionalidades:**
+        - ✅ Descarga automática desde OneDrive
+        - ✅ Soporte para archivos locales
+        - ✅ Búsqueda avanzada por nombre
+        - ✅ Exportación a CSV
+        - ✅ Separación de resultados (encontrados/no encontrados)
+        
+        **Configuración de encabezados:**
+        - 📁 Ubicación: Encabezados en fila 2 (segunda fila)
+        - 📁 Relación: Encabezados en fila 1 (primera fila)
+        """)

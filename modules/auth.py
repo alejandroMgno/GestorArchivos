@@ -9,7 +9,7 @@ def verificar_login(usuario, password):
     """Verifica las credenciales del usuario"""
     USUARIOS = {
         "admin": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",  # admin123
-        "rrhh": "ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae"  # user123
+        "usuario": "ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae"  # user123
     }
     
     if usuario in USUARIOS:
