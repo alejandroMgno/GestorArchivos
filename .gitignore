@@ -4,3 +4,6 @@
 *.xlsx
 *.xlsm
 *.xlsb
+
+# Ignorar carpeta temp_arvhicos
+temp_archivos/

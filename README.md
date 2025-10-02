@@ -1,209 +1,161 @@
-📋 SDU - Sistema de Ubicación de Empleados
-Sistema web para la verificación y gestión de ubicación de empleados, desarrollado con Streamlit y Python.
+🔍 Sistema de Ubicación de Contactos de Empleados
+Una aplicación web desarrollada con Streamlit para buscar y contactar empleados de manera eficiente, integrando información de ubicación, correos electrónicos y números de teléfono.
 
-🚀 Características
-🔐 Autenticación segura con múltiples niveles de usuario
+✨ Características Principales
+🔎 Búsqueda Avanzada
+Búsqueda por nombre: Encuentra empleados rápidamente usando cualquier parte del nombre
 
-🌐 Descarga automática desde OneDrive y SharePoint
+Filtros automáticos: Excluye automáticamente a directores (no subdirectores)
 
-🔍 Búsqueda avanzada por nombre, correo o teléfono
+Resultados en tiempo real: Búsqueda instantánea mientras escribes
 
-📤 Exportación de datos a formato CSV
+📱 Contacto Directo
+Integración con WhatsApp: Contacta directamente vía WhatsApp con formato internacional (+52)
 
-📱 Interfaz responsive y fácil de usar
+Envío de correos: Abre tu cliente de correo con el destinatario predefinido
 
-👥 Usuarios y Accesos
-1. 👑 Administrador
-Usuario: admin
+Selección intuitiva: Interfaz de selección con información completa del contacto
 
-Contraseña: admin123
+🛡️ Panel de Administración
+Gestión segura: Acceso protegido con contraseña
 
-Permisos: Acceso completo a todas las funcionalidades
+Carga de archivos: Sube y procesa archivos Excel con datos de empleados
 
-2. 👥 Recursos Humanos
-Usuario: rh
+Almacenamiento temporal: Los archivos se mantienen entre sesiones
 
-Contraseña: Rrhh2025*+
+Procesamiento por lotes: Combina automáticamente datos de múltiples fuentes
 
-Permisos: Acceso completo al módulo SDU
+📊 Estructura de Archivos Requeridos
+La aplicación requiere tres archivos Excel:
 
-3. 👤 Usuario General
-Usuario: usuario
+1. 📍 Archivo de Ubicación
+Encabezados en fila 2
 
-Contraseña: user123
+Columnas requeridas:
 
-Permisos: Acceso básico al sistema
+Nombre (o similar): Nombres de los empleados
 
-📦 Instalación
-Requisitos previos
+Puesto (opcional): Cargos o posiciones
+
+Departamento (opcional): Áreas o departamentos
+
+2. 📧 Archivo de Correo
+Encabezados en fila 1
+
+Columnas requeridas:
+
+Nombre (o similar): Nombres de los empleados
+
+Correo (o similar): Direcciones de email
+
+3. 📞 Archivo de Teléfono
+Encabezados en fila 1
+
+Columnas requeridas:
+
+Nombre (o similar): Nombres de los empleados
+
+Teléfono (o similar): Números de contacto
+
+🚀 Instalación y Uso
+Prerrequisitos
+bash
 Python 3.8+
-
-pip (gestor de paquetes de Python)
-
-Pasos de instalación
-Clonar o descargar el proyecto
-
+pip install streamlit pandas requests openpyxl
+Ejecución
 bash
-git clone https://github.com/alejandroMgno/GestorArchivos
-cd sistema-ubicacion
-Instalar dependencias
+streamlit run app.py
+📋 Pasos de Uso
+Acceso como Administrador:
 
-bash
-pip install -r requirements.txt
-Ejecutar la aplicación
+Haz clic en "Panel de Administrador"
 
-bash
-streamlit run main_app.py
-Acceder al sistema
+Ingresa la contraseña: admin2021*+
 
-Abrir navegador en: http://localhost:8501
+Carga de Archivos:
 
-Ingresar con las credenciales proporcionadas
+Sube los tres archivos Excel requeridos
 
-🗂️ Estructura del Proyecto
+Los archivos se guardan automáticamente
+
+Procesamiento:
+
+Haz clic en "Procesar Archivos"
+
+Los datos se combinan y filtran automáticamente
+
+Búsqueda y Contacto:
+
+Usa la barra de búsqueda para encontrar empleados
+
+Selecciona un contacto de la lista
+
+Usa los botones de WhatsApp o Correo para contactar
+
+🎯 Funcionalidades de Búsqueda
+Búsqueda parcial: Encuentra coincidencias con cualquier parte del nombre
+
+Búsqueda múltiple: Separa términos con espacios para búsquedas más específicas
+
+Filtrado inteligente: Solo muestra empleados con información de contacto válida
+
+🔒 Seguridad y Privacidad
+Contraseña de administrador: Protege el acceso a funciones críticas
+
+Datos temporales: Los archivos se almacenan localmente
+
+Filtrado de información: Solo se muestran empleados con datos de contacto
+
+📈 Exportación de Datos
+Exportar resultados de búsqueda: Descarga CSV con los empleados encontrados
+
+Exportar todos los datos: Descarga completa de la base de contactos
+
+🛠️ Estructura del Proyecto
 text
-sistema-ubicacion/
-│
-├── main_app.py              # Aplicación principal
-├── requirements.txt         # Dependencias del proyecto
-│
-├── modules/
-│   ├── __init__.py         # Inicializador del módulo
-│   ├── auth.py             # Sistema de autenticación
-│   └── sdu_module.py       # Módulo principal SDU
-│
-└── README.md               # Este archivo
-📁 Configuración de Archivos
-Archivos de entrada requeridos:
-📋 Archivo de Ubicación
+sistema-ubicacion-contactos/
+├── app.py                 # Aplicación principal
+├── temp_archivos/         # Directorio temporal para archivos
+├── README.md             # Este archivo
+└── requirements.txt      # Dependencias del proyecto
+⚙️ Configuración Técnica
+Dependencias Principales
+streamlit: Interfaz web
 
-Encabezados en la segunda fila (fila 1)
+pandas: Procesamiento de datos
 
-Debe contener columnas: nombre, correo, telefono
+requests: Manejo de sesiones HTTP
 
-Formato: Excel (.xlsx, .xls)
+openpyxl: Lectura de archivos Excel
 
-📊 Archivo de Relación
+Características de Rendimiento
+Carga progresiva: Barra de progreso durante el procesamiento
 
-Encabezados en la primera fila (fila 0)
+Sesiones persistentes: Mantiene el estado entre interacciones
 
-Debe contener columnas: nombre, correo, telefono
-
-Formato: Excel (.xlsx, .xls)
-
-Opciones de carga:
-🌐 URLs de OneDrive/SharePoint (descarga automática)
-
-📁 Archivos locales (upload manual)
-
-🎯 Funcionalidades Principales
-1. 🔍 Procesamiento de Datos
-Carga automática desde múltiples fuentes
-
-Validación y limpieza de datos
-
-Detección automática de columnas
-
-Combinación inteligente de datasets
-
-2. 📊 Visualización de Resultados
-Métricas en tiempo real: Total, Encontrados, No encontrados
-
-Pestañas separadas: Empleados ubicados vs No ubicados
-
-Búsqueda integrada: Filtrado por cualquier campo
-
-Vista previa: Visualización de datos antes de exportar
-
-3. 📤 Exportación de Datos
-Formatos soportados: CSV (UTF-8)
-
-Opciones de exportación:
-
-📥 Resultados completos
-
-📥 Solo empleados ubicados
-
-📥 Solo empleados no ubicados
-
-📥 Resultados de búsqueda específicos
-
-4. 🌐 Integración con Cloud
-OneDrive Personal: URLs 1drv.ms
-
-SharePoint Empresarial: URLs sharepoint.com
-
-Descarga automática con conversión de URLs
-
-Soporte para autenticación (opcional)
-
-🛠️ Tecnologías Utilizadas
-Python 3.8+: Lenguaje principal
-
-Streamlit: Framework web interactivo
-
-Pandas: Procesamiento de datos
-
-OpenPyXL: Manejo de archivos Excel
-
-Requests: Cliente HTTP para descargas
-
-Hashlib: Encriptación de contraseñas
-
-⚙️ Configuración Avanzada
-Variables de Entorno (Opcional)
-python
-# Para desarrollo, puedes crear un archivo .streamlit/secrets.toml
-AZURE_CLIENT_ID = "tu_client_id"
-AZURE_TENANT_ID = "tu_tenant_id" 
-AZURE_CLIENT_SECRET = "tu_client_secret"
-Personalización de Columnas
-El sistema detecta automáticamente columnas con estos nombres:
-
-Nombre: nombre, name, nombres, empleado, colaborador
-
-Correo: correo, email, mail, e-mail, correo_electronico
-
-Teléfono: tel, fono, telefono, phone, celular, cel, movil
-
-🚦 Flujo de Trabajo
-Login → Ingresar al sistema con credenciales válidas
-
-Carga → Seleccionar archivos de Ubicación y Relación
-
-Procesar → Ejecutar el análisis de datos
-
-Analizar → Revisar resultados en el dashboard
-
-Buscar → Filtrar información específica si es necesario
-
-Exportar → Descargar resultados en CSV
+Manejo de errores: Validación robusta de archivos y datos
 
 🆘 Solución de Problemas
-Error común: "File is not a zip file"
-Solución: Verificar que los archivos estén compartidos como "Cualquier persona con el vínculo" en OneDrive/SharePoint
+Problemas Comunes
+Error al cargar archivos:
 
-Error común: SSL Certificate verify failed
-Solución: El sistema incluye manejo automático de errores SSL
+Verifica que los encabezados estén en la fila correcta
 
-Error común: No se encuentran columnas
-Solución: Verificar que los archivos tengan las columnas requeridas
+Confirma que los nombres de columnas sean similares a los esperados
+
+No se encuentran empleados:
+
+Revisa que los nombres coincidan entre los tres archivos
+
+Verifica que los empleados tengan al menos teléfono o correo
+
+Problemas de contraseña:
+
+La contraseña por defecto es: admin2021*+
 
 📞 Soporte
-Para reportar issues o solicitar ayuda:
+Para reportar problemas o sugerir mejoras, contacta al equipo de desarrollo.
 
-Verificar que se siguieron los pasos de instalación
-
-Confirmar que los archivos de entrada tienen el formato correcto
-
-Proporcionar capturas de pantalla del error
-
-📄 Licencia
-Este proyecto es de uso interno para la gestión de recursos humanos.
-
-🔄 Versiones
-v1.0 (2024): Versión inicial con funcionalidades básicas
-
-v1.1 (2024): Integración con OneDrive/SharePoint
-
-v1.2 (2024): Mejoras en interfaz y exportación
+Versión: 1.0
+Última actualización: Diciembre 2024
+Desarrollado con 🐍 Python y ❤️
