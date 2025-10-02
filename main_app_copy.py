@@ -16,12 +16,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Configuración de la página con layout más ancho
 st.set_page_config(
     page_title="Sistema de Ubicación de Contactos de Empleados",
-    page_icon="🔍",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# CSS personalizado CORREGIDO
+# CSS personalizado para reducir márgenes al máximo
 st.markdown("""
     <style>
     /* Reducir márgenes principales al mínimo */
@@ -31,6 +31,21 @@ st.markdown("""
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
         max-width: 100% !important;
+    }
+    
+    /* Header más compacto */
+    header .decoration {
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    /* Expanders más compactos */
+    .stExpander {
+        margin-bottom: 0.25rem !important;
+    }
+    
+    /* Columnas más compactas */
+    .stColumns {
+        gap: 0.25rem !important;
     }
     
     /* Botones más compactos */
@@ -52,6 +67,22 @@ st.markdown("""
         margin: 0.25rem 0 !important;
     }
     
+    /* Reducir padding interno de las celdas */
+    .dataframe th, .dataframe td {
+        padding: 1px 2px !important;
+        font-size: 0.8em !important;
+    }
+    
+    /* Tabs más compactos */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0 !important;
+    }
+    
+    .stTadsadasb [data-baseweb="tab"] {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.9em !important;
+    }
+    
     /* Reducir espacio entre elementos */
     .element-container {
         padding: 0.1rem 0 !important;
@@ -63,49 +94,32 @@ st.markdown("""
         max-width: 99vw !important;
     }
     
-    /* Botones de acción personalizados */
-    .whatsapp-btn {
-        background-color: #25D366 !important;
-        color: white !important;
-        border: none !important;
-        padding: 10px 20px !important;
-        border-radius: 5px !important;
-        cursor: pointer !important;
-        width: 100% !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        text-decoration: none !important;
-        display: inline-block !important;
-        text-align: center !important;
+    /* Eliminar márgenes adicionales */
+    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div {
+        margin: 0.1rem 0 !important;
     }
     
-    .email-btn {
-        background-color: #EA4335 !important;
-        color: white !important;
-        border: none !important;
-        padding: 10px 20px !important;
-        border-radius: 5px !important;
-        cursor: pointer !important;
-        width: 100% !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        text-decoration: none !important;
-        display: inline-block !important;
-        text-align: center !important;
+    /* Info messages más compactos */
+    .stAlert {
+        padding: 0.25rem !important;
+        margin: 0.1rem 0 !important;
     }
     
-    .disabled-btn {
-        background-color: #cccccc !important;
-        color: #666666 !important;
-        border: none !important;
-        padding: 10px 20px !important;
-        border-radius: 5px !important;
-        width: 100% !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        text-decoration: none !important;
-        display: inline-block !important;
-        text-align: center !important;
+    /* Success messages más compactos */
+    .stSuccess {
+        padding: 0.25rem !important;
+        margin: 0.1rem 0 !important;
+    }
+    
+    /* Error messages más compactos */
+    .stError {
+        padding: 0.25rem !important;
+        margin: 0.1rem 0 !important;
+    }
+    
+    /* File uploader más compacto */
+    .stFileUploader {
+        margin: 0.1rem 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -219,60 +233,6 @@ def es_director(puesto):
     
     return False
 
-def limpiar_telefono(numero):
-    """Limpia y formatea un número de teléfono"""
-    if pd.isna(numero) or numero == '':
-        return ''
-    
-    numero_str = str(numero)
-    # Eliminar todo excepto dígitos
-    numero_limpio = re.sub(r'\D', '', numero_str)
-    return numero_limpio
-
-def crear_url_whatsapp(numero):
-    """Crea la URL para WhatsApp con formato 52 + número"""
-    if not numero or numero == '':
-        return None
-    
-    # Limpiar el número
-    numero_limpio = re.sub(r'\D', '', str(numero))
-    
-    # Verificar si ya tiene código de país
-    if numero_limpio.startswith('52') and len(numero_limpio) == 12:
-        numero_final = numero_limpio
-    elif len(numero_limpio) == 10:
-        numero_final = '52' + numero_limpio
-    else:
-        return None
-    
-    return f"https://wa.me/{numero_final}"
-
-def crear_url_correo(correo):
-    """Crea la URL para enviar correo"""
-    if not correo or correo == '':
-        return None
-    
-    return f"mailto:{correo}"
-
-def buscar_empleados_simple(df, termino_busqueda):
-    """
-    Búsqueda SIMPLE y EFECTIVA de empleados por nombre
-    """
-    if termino_busqueda.strip() == '':
-        return df
-    
-    termino = termino_busqueda.upper().strip()
-    
-    # Búsqueda directa: cualquier coincidencia en el nombre
-    def coincide(nombre):
-        if pd.isna(nombre):
-            return False
-        nombre_str = str(nombre).upper()
-        return termino in nombre_str
-    
-    resultados = df[df['nombre'].apply(coincide)]
-    return resultados
-
 def procesar_datos(df_ubicacion, df_correo, df_telefono, progress_bar=None):
     """Procesa y combina los datos de los tres archivos con barra de progreso"""
     try:
@@ -377,8 +337,7 @@ def procesar_datos(df_ubicacion, df_correo, df_telefono, progress_bar=None):
             nombre = row[col_nombre_telefono]
             for col in columnas_telefono:
                 if col in row and pd.notna(row[col]) and str(row[col]).strip() != '':
-                    telefono_limpio = limpiar_telefono(row[col])
-                    telefono_dict[nombre] = telefono_limpio
+                    telefono_dict[nombre] = row[col]
                     break
         
         # Crear el dataframe combinado - SOLO EMPLEADOS EN UBICACIÓN
@@ -573,6 +532,61 @@ def mostrar_seccion_administrador_datos():
             st.write(f"**Teléfono:** {st.session_state.info_origen['origen_telefono']}")
             st.write(f"**Última actualización:** {st.session_state.info_origen['fecha_actualizacion']}")
     
+    # Si la contraseña es correcta, mostrar los datos de empleados no encontrados
+    # Necesitamos recrear los datos de no encontrados ya que ya no tenemos la columna en_ubicacion
+    if st.session_state.datos_cargados and st.session_state.info_origen:
+        # Cargar archivos originales para comparar
+        ruta_ubicacion = cargar_archivo_temporal('ubicacion')
+        ruta_correo = cargar_archivo_temporal('correo')
+        ruta_telefono = cargar_archivo_temporal('telefono')
+        
+        if ruta_ubicacion and ruta_correo and ruta_telefono:
+            df_ubicacion = cargar_archivo_desde_ruta(ruta_ubicacion, 1)
+            df_correo = cargar_archivo_desde_ruta(ruta_correo, 0)
+            df_telefono = cargar_archivo_desde_ruta(ruta_telefono, 0)
+            
+            if df_ubicacion is not None and df_correo is not None and df_telefono is not None:
+                # Encontrar columnas de nombre
+                col_nombre_ubi = encontrar_columna_clave(df_ubicacion, ['nombre', 'name', 'nombres'])
+                col_nombre_correo = encontrar_columna_clave(df_correo, ['nombre', 'name', 'nombres'])
+                col_nombre_telefono = encontrar_columna_clave(df_telefono, ['nombre', 'name', 'nombres'])
+                
+                if col_nombre_ubi and col_nombre_correo and col_nombre_telefono:
+                    # Limpiar nombres
+                    nombres_ubicacion = set(df_ubicacion[col_nombre_ubi].astype(str).str.strip().str.upper())
+                    nombres_correo = set(df_correo[col_nombre_correo].astype(str).str.strip().str.upper())
+                    nombres_telefono = set(df_telefono[col_nombre_telefono].astype(str).str.strip().str.upper())
+                    
+                    # Encontrar empleados que tienen correo/teléfono pero NO están en ubicación
+                    nombres_con_contacto = nombres_correo.union(nombres_telefono)
+                    nombres_no_en_ubicacion = nombres_con_contacto - nombres_ubicacion
+                    
+                    if len(nombres_no_en_ubicacion) > 0:
+                        st.info(f"📋 Empleados con contacto pero no encontrados en ubicación: {len(nombres_no_en_ubicacion)}")
+                        
+                        # Crear dataframe con información básica
+                        datos_no_encontrados = []
+                        for nombre in nombres_no_en_ubicacion:
+                            datos_no_encontrados.append({
+                                'nombre': nombre,
+                                'estado': 'No encontrado en ubicación'
+                            })
+                        
+                        df_no_encontrados = pd.DataFrame(datos_no_encontrados)
+                        st.dataframe(df_no_encontrados, use_container_width=True)
+                        
+                        # Exportar no encontrados
+                        csv_no_encontrados = df_no_encontrados.to_csv(index=False, encoding='utf-8-sig')
+                        st.download_button(
+                            label="📥 Exportar No Encontrados (CSV)",
+                            data=csv_no_encontrados,
+                            file_name=f"empleados_no_encontrados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv",
+                            key="export_no_encontrados_admin"
+                        )
+                    else:
+                        st.info("¡Todos los empleados con contacto están en la ubicación!")
+    
     return True
 
 def mostrar_sdu():
@@ -587,8 +601,6 @@ def mostrar_sdu():
         st.session_state.info_origen = None
     if 'error_carga' not in st.session_state:
         st.session_state.error_carga = None
-    if 'contacto_seleccionado' not in st.session_state:
-        st.session_state.contacto_seleccionado = None
     
     # Contenedor principal más compacto
     with st.container():
@@ -627,113 +639,6 @@ def mostrar_sdu():
                 
                 if len(resultados) > 0:
                     st.success(f"✅ Encontrados {len(resultados)} empleados para: '{termino}'")
-                    
-                    # AGREGADO: SELECTOR DE CONTACTOS - MÉTODO CORREGIDO
-                    # Resetear índice para evitar problemas
-                    resultados_reset = resultados.reset_index(drop=True)
-                    
-                    # Crear lista de opciones con índice correcto
-                    opciones_contactos = []
-                    for idx in range(len(resultados_reset)):
-                        row = resultados_reset.iloc[idx]
-                        nombre = row['nombre']
-                        puesto = row.get('puesto', '')
-                        depto = row.get('departamento', '')
-                        
-                        # Crear texto descriptivo para cada opción
-                        texto_opcion = f"{nombre}"
-                        if puesto:
-                            texto_opcion += f" | {puesto}"
-                        if depto:
-                            texto_opcion += f" | {depto}"
-                        
-                        opciones_contactos.append(texto_opcion)
-                    
-                    seleccion = st.selectbox(
-                        "👤 Selecciona un contacto:",
-                        options=opciones_contactos,
-                        key="select_contacto",
-                        index=None,
-                        placeholder="Elige un contacto de la lista..."
-                    )
-                    
-                    # AGREGADO: PROCESAR SELECCIÓN Y MOSTRAR BOTONES
-                    if seleccion:
-                        # Encontrar el índice de la selección
-                        seleccion_index = opciones_contactos.index(seleccion)
-                        contacto_seleccionado = resultados_reset.iloc[seleccion_index]
-                        st.session_state.contacto_seleccionado = contacto_seleccionado
-                        
-                        # Mostrar información del contacto seleccionado
-                        st.write("---")
-                        st.write("### 📋 Contacto Seleccionado")
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.info(f"**Nombre:** {contacto_seleccionado['nombre']}")
-                            if 'puesto' in contacto_seleccionado and contacto_seleccionado['puesto']:
-                                st.info(f"**Puesto:** {contacto_seleccionado['puesto']}")
-                            if 'departamento' in contacto_seleccionado and contacto_seleccionado['departamento']:
-                                st.info(f"**Departamento:** {contacto_seleccionado['departamento']}")
-                        
-                        with col2:
-                            telefono = contacto_seleccionado.get('telefono', '')
-                            correo = contacto_seleccionado.get('correo', '')
-                            
-                            if telefono:
-                                st.info(f"**Teléfono:** {telefono}")
-                            else:
-                                st.warning("**Teléfono:** No disponible")
-                            
-                            if correo:
-                                st.info(f"**Correo:** {correo}")
-                            else:
-                                st.warning("**Correo:** No disponible")
-                        
-                        # AGREGADO: BOTONES DE ACCIÓN
-                        st.write("### 📱 Acciones")
-                        col_whatsapp, col_correo = st.columns(2)
-                        
-                        with col_whatsapp:
-                            if telefono and telefono != '':
-                                url_whatsapp = crear_url_whatsapp(telefono)
-                                if url_whatsapp:
-                                    st.markdown(
-                                        f'<a href="{url_whatsapp}" target="_blank" style="text-decoration: none;">'
-                                        f'<button style="background-color:#25D366;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;width:100%;font-size:16px;font-weight:bold;">'
-                                        f'📱 Abrir WhatsApp'
-                                        f'</button>'
-                                        f'</a>',
-                                        unsafe_allow_html=True
-                                    )
-                                else:
-                                    st.button("📱 WhatsApp", disabled=True, help="Número de teléfono no válido", use_container_width=True)
-                            else:
-                                st.button("📱 WhatsApp", disabled=True, help="No hay número de teléfono", use_container_width=True)
-                        
-                        with col_correo:
-                            if correo and correo != '':
-                                url_correo = crear_url_correo(correo)
-                                if url_correo:
-                                    st.markdown(
-                                        f'<a href="{url_correo}" target="_blank" style="text-decoration: none;">'
-                                        f'<button style="background-color:#EA4335;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;width:100%;font-size:16px;font-weight:bold;">'
-                                        f'📧 Enviar Correo'
-                                        f'</button>'
-                                        f'</a>',
-                                        unsafe_allow_html=True
-                                    )
-                                else:
-                                    st.button("📧 Correo", disabled=True, help="Correo no válido", use_container_width=True)
-                            else:
-                                st.button("📧 Correo", disabled=True, help="No hay correo electrónico", use_container_width=True)
-                    
-                    else:
-                        st.info("👆 Selecciona un contacto de la lista para ver las opciones de contacto")
-                    
-                    # Mostrar tabla completa de resultados
-                    st.write("### 📊 Todos los Resultados")
                     st.dataframe(resultados, use_container_width=True)
                     
                     # Exportar resultados de búsqueda
